@@ -45,6 +45,13 @@ def record_current_answer(answer, current_question_id, session):
         session["TotalScore"] = score
     else:
         session["TotalScore"] += score
+
+    #Try to store response:
+    saved_responses = session.get("SavedResponses", None)
+    if saved_responses is None:
+        session["SavedResponses"] = [{"question_id":current_question_id, "answer_selected": message, "correct_answer":correct_answer}]
+    else:
+        session["SavedResponses"].append({"question_id":current_question_id, "answer_selected": message, "correct_answer":correct_answer})
     
     return bool(score), error
 
@@ -67,7 +74,17 @@ def generate_final_response(session):
     Creates a final result message including a score based on the answers
     by the user for questions in the PYTHON_QUESTION_LIST.
     '''
-    total_score = session.get("TotalScore", 0)
+    total_score = session.get("TotalScore", None)
+    if total_score is None:
+        saved_responses =session.get("SavedResponses", None)
+        if saved_responses is None:
+            total_score = 0
+        else:
+            total_score = 0
+            for ques in saved_responses:
+                if ques["answer_selected"] == ques["correct_answer"]:
+                    total_score+=1
+                
     total_questions_count = len(PYTHON_QUESTION_LIST)
     if total_score < (0.4*total_questions_count):
         summary = f"Good Effort! You score is {total_score}. Better Luck Next Time!"
